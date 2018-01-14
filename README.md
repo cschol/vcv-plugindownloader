@@ -1,12 +1,12 @@
 # vcv-plugindownloader
 
 This simple script parses the plugin information provided by the VCV Rack [community repository](https://github.com/VCVRack/community)
-and download the plugins available for the specified target platform (Windows, MacOS, Linux).
+and download the **binary release** versions of plugins available for the specified target platform (Windows, MacOS, Linux).
 
 The script
 
 - clones/updates the `community` repository for access to the latest plugin information.
-- downloads the archive, verifies the `sha256`, and extracts the archive.
+- downloads the archive of **binary releases** (**not** source!), verifies the `sha256`, and extracts the archive.
 - discards any archives that fail `sha256` verification (or encounter any other error) and does **not** extract the archive.
 - only downloads archives that are not already present in the `downloads` directory (verified via `sha256`).
 - only updates the local version of the plugin if a new version was downloaded.
