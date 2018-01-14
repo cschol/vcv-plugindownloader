@@ -32,6 +32,14 @@ Valid target platforms are: `win`, `mac`, `lin`.
 
 **NOTE:** The script always assumes the **current working directory** is the `plugins` directory! 
 
+### Specifying which plugins to download
+
+The *optional* `-l` (or `--list`) argument allows speciyfing individual plugins to download in a *whitespace-separated* list:
+
+```
+./vcv-plugindownloader/vcv-plugindownloader.py win -l AudibleInstruments Grayscale
+```
+
 ## Supported platforms
 
 The script has been tested on the Windows platform, but **should** work on MacOS and Linux.

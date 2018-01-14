@@ -9,8 +9,12 @@ import shutil
 import zipfile
 import hashlib
 import subprocess
+import argparse
+import traceback
 
-__version__ = "1.0.0"
+
+__version__ = "1.1.0"
+
 
 COMMUNITY_REPO = "https://github.com/VCVRack/community.git"
 COMMUNITY_REPO_DIR = os.path.join(os.getcwd(), "community")
@@ -18,9 +22,11 @@ DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
 FAILED_CHECKSUM_DIR = os.path.join(DOWNLOAD_DIR, "failed_checksum")
 
 
-def download_url(url, target_path=os.getcwd()):
+def download_from_url(url, target_path=os.getcwd()):
     file_name = os.path.basename(url).split('?')[0]
-    with urllib.request.urlopen(url) as response, open(os.path.join(target_path, file_name), 'wb') as out_file:
+    request = urllib.request.Request(url, headers={'User-Agent': 'vcv-plugindownloader/%s' % __version__}) 
+    opener = urllib.request.build_opener()
+    with opener.open(request) as response, open(os.path.join(target_path, file_name), 'wb') as out_file:
         shutil.copyfileobj(response, out_file)
 
 
@@ -32,20 +38,26 @@ def hash_sha256(file_name):
     return hash_sha256.hexdigest()
 
 
-def main(args=None):
+def parse_args(argv):
+    parser = argparse.ArgumentParser()
 
-    if len(args) != 2:
-        print("Usage: %s [win|mac|lin]" % args[0])
-        return 1
+    parser.add_argument("platform", help="platform to download plugins for", type=str, choices=["win", "mac", "lin"])
+    parser.add_argument("-l", "--list", nargs='+', help="list of plugins to download (white-space separated)")
 
-    platform = args[1]
-    if platform != "win" and platform != "mac" and platform != "lin":
-        print("ERROR: Unsupported platform")
-        return 1
-    platform_string = "Windows" if platform == "win" else "MacOS" if platform == "mac" else "Linux"
+    return parser.parse_args()
+
+
+def main(argv=None):
+
+    args = parse_args(argv)
+
+    platform = args.platform
+    plugin_list = args.list
+
+    PLATFORM_STRING = {"win": "Windows", "mac": "MacOS", "lin": "Linux"}
 
     print("VCV Plugin Downloader v%s" % __version__)
-    print("Platform: %s" % platform_string)
+    print("Platform: %s" % PLATFORM_STRING[platform])
 
     try:
         print("Updating community repository...")
@@ -54,9 +66,19 @@ def main(args=None):
         else:
             subprocess.check_call(["git", "pull"], cwd=COMMUNITY_REPO_DIR)
         
-        plugins_json = glob.glob(os.path.join(COMMUNITY_REPO_DIR, "plugins/*.json"))
+        plugins_json = []
+        if plugin_list:
+            for l in plugin_list:
+                p = glob.glob(os.path.join(COMMUNITY_REPO_DIR, "plugins/%s.json" % l))
+                if not p:
+                    print("[%s] ERROR: Invalid plugin name" % l)
+                else:
+                    plugins_json.append(p[0])
+        else:
+            plugins_json = glob.glob(os.path.join(COMMUNITY_REPO_DIR, "plugins/*.json"))
+
         if not plugins_json:
-            print("ERROR: No plugins found in community repository")
+            print("ERROR: No valid plugins found in community repository")
             return 1
 
         if not os.path.exists(DOWNLOAD_DIR):
@@ -102,7 +124,7 @@ def main(args=None):
                         if download:
                             try:
                                 print("[%s] Downloading version %s..." % (name, version), end='', flush=True)
-                                download_url(url, DOWNLOAD_DIR)
+                                download_from_url(url, DOWNLOAD_DIR)
                             except Exception as e:
                                 print("ERROR: Failed to download archive for %s: %s" % (name, e))
                                 continue
@@ -147,13 +169,14 @@ def main(args=None):
                                 if os.path.exists(module_dir):
                                     shutil.rmtree(module_dir)
                     else:
-                        print("[%s] WARNING: Binary archive download for platform %s not available" % (name, platform_string))
+                        print("[%s] WARNING: Binary archive download for platform %s not available" % (name, PLATFORM_STRING[platform]))
                 else:
                     print("[%s] WARNING: No binary archive downloads available in repository" % name)
         return 0
 
     except Exception as e:
         print("Exception: %s" % e)
+        traceback.print_exc(file=sys.stderr)
         return 1    
 
 if __name__ == "__main__":
