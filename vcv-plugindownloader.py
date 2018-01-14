@@ -147,9 +147,9 @@ def main(args=None):
                                 if os.path.exists(module_dir):
                                     shutil.rmtree(module_dir)
                     else:
-                        print("[%s] WARNING: Download for platform %s not available" % (name, platform_string))
+                        print("[%s] WARNING: Binary archive download for platform %s not available" % (name, platform_string))
                 else:
-                    print("[%s] WARNING: No downloads available in repository" % name)
+                    print("[%s] WARNING: No binary archive downloads available in repository" % name)
         return 0
 
     except Exception as e:
