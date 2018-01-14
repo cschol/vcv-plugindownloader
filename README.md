@@ -34,7 +34,7 @@ Valid target platforms are: `win`, `mac`, `lin`.
 
 ### Specifying which plugins to download
 
-The *optional* `-l` (or `--list`) argument allows speciyfing individual plugins to download in a *whitespace-separated* list:
+The *optional* `-l` (or `--list`) argument allows specifying individual plugins to download in a *whitespace-separated* list:
 
 ```
 ./vcv-plugindownloader/vcv-plugindownloader.py win -l AudibleInstruments Grayscale
