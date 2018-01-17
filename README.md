@@ -50,6 +50,12 @@ Valid platforms are: `win`, `mac`, `lin`.
 ./vcv-plugindownloader/vcv-plugindownloader.py win -l AudibleInstruments Grayscale
 ```
 
+- The *optional* `-x` (or `--exclude`) argument allows specifying individual plugins to exclude from download in a *whitespace-separated* list:
+
+```
+./vcv-plugindownloader/vcv-plugindownloader.py win -x AudibleInstruments Grayscale
+```
+
 - The *optional* `-s` (or `--source`) argument attempts to fall back on cloning and building the plugin from source:
 
 ```

@@ -48,6 +48,7 @@ def parse_args(argv):
 
     parser.add_argument("platform", help="platform to download plugins for", type=str, choices=["win", "mac", "lin"])
     parser.add_argument("-l", "--list", nargs='+', help="list of plugins to download (white-space separated)")
+    parser.add_argument("-x", "--exclude", nargs='+', help="list of plugins to exclude from download (white-space separated)")
     parser.add_argument("-s", "--source", action='store_true', help="attempt to build plugins from source if binary release is not available")
     parser.add_argument("-j", "--jobs", type=int, help="number of jobs to pass to make command via -j option", default=1)
 
@@ -90,6 +91,7 @@ def main(argv=None):
 
     platform = args.platform
     plugin_list = args.list
+    plugin_exclude_list = args.exclude
     build_from_source = args.source
     num_jobs = args.jobs
    
@@ -122,6 +124,10 @@ def main(argv=None):
             # Grab all .json files in the plugins directory.
             plugins_json = glob.glob(os.path.join(COMMUNITY_REPO_DIR, "plugins/*.json"))
 
+        # Filter out any excluded plugins (if applicable)
+        if plugin_exclude_list:
+            plugins_json = [p for p in plugins_json if not any(x for x in plugin_exclude_list if x == os.path.basename(p).strip(".json"))]
+        
         if not plugins_json:
             print("ERROR: No valid plugins found")
             return 1
