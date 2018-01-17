@@ -12,7 +12,7 @@ import subprocess
 import argparse
 import traceback
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 
 COMMUNITY_REPO = "https://github.com/VCVRack/community.git"
