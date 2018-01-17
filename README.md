@@ -22,9 +22,15 @@ The script
 
 - Clone this repository to VCV Rack's `plugins` directory
 
+**IMPORTANT NOTE**:
+For **binary** packages the `plugins` directory can refer to either the directory inside of the *source tree* for **dev builds**, e.g. `~/source/Rack/plugins`, or
+the **platform-specific** plugin directory for **installed VCV Rack versions**, e.g. `Documents/Rack/` (Mac), `My Documents/Rack/` (Windows), or `~/.Rack/` (Linux).
+If you decide to use the `-s` (or `--source`) option to fall back to compiling plugins from source that are not available for your platform
+in binary form, the script **must** be executed from the plugins directory in the *source tree*, e.g. `~/source/Rack/plugins`.
+
 - Execute the script with the appropriate **target platform**
 
-*Windows* example (in `MinGW64` shell):
+*Windows* example (in `MinGW64` shell, plugins directory in source tree):
 ```
 cd ~/src/Rack/plugins
 ./vcv-plugindownloader/vcv-plugindownloader.py win
