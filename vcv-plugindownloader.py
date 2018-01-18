@@ -315,10 +315,9 @@ def main(argv=None):
                                 update_source(slug, source_url)
                                 committish = "HEAD"
 
-                        if committish:
-                            print("[%s] Checking out revision: %s"  % (slug, committish))
-                            check_out_revision(slug, committish)
-                        
+                        print("[%s] Checking out revision: %s"  % (slug, committish))
+                        check_out_revision(slug, committish)
+
                         if do_clean:
                             print("[%s] Cleaning build..." % slug)
                             clean_build(slug)
