@@ -85,7 +85,7 @@ Obviously only has an effect when `-s` is specified.
 For certain modules (e.g. Fundamental), a git `branch` or `tag` needs to be checked out for the build to succeed
 (`master` is not compatible with the currently release tag).
 This `branch` or `tag` is hard-coded in the script and will be updated as required. Note, that plugins that are
-pinned like that will not be updated automatically as other modules that just build from `HEAD` of the `master` branch.
+pinned like that will not be updated automatically.
 
 ## Supported platforms
 

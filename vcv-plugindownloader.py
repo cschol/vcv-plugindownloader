@@ -80,7 +80,7 @@ def update_source(plugin_name, git_repo_url, fetch_only=False):
     try:
         subprocess.check_call(["git", "fetch", "--all"], cwd=get_source_dir(plugin_name))
         if not fetch_only:
-            subprocess.check_call(["git", "merge", "origin", "master"], cwd=get_source_dir(plugin_name))
+            subprocess.check_call(["git", "merge", "origin/master"], cwd=get_source_dir(plugin_name))
     except Exception as e:
         print("[%s] ERROR: Failed to update source" % plugin_name)
         raise e
