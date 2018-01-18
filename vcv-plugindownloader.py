@@ -334,6 +334,11 @@ def main(argv=None):
                     else:
                         print("[%s] No source URL specified in JSON file. Skipping." % slug)
         
+        # Remove annoying "__MACOSX" directory for all non-Mac platforms, if it exists.
+        annoying_mac_dir = os.path.join(os.getcwd(), "__MACOSX")
+        if platform != "mac" and os.path.exists(annoying_mac_dir):
+            shutil.rmtree(annoying_mac_dir)
+
         if error_list:
             print("")
             print("PLUGINS WITH ERRORS: %s" % " ".join(error_list))
