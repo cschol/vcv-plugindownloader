@@ -49,8 +49,9 @@ def parse_args(argv):
     parser.add_argument("platform", help="platform to download plugins for", type=str, choices=["win", "mac", "lin"])
     parser.add_argument("-l", "--list", nargs='+', help="list of plugins to download (white-space separated)")
     parser.add_argument("-x", "--exclude", nargs='+', help="list of plugins to exclude from download (white-space separated)")
-    parser.add_argument("-s", "--source", action='store_true', help="attempt to build plugins from source if binary release is not available")
+    parser.add_argument("-s", "--source", action='store_true', help="attempt to build plugins from source if binary release is not available", default=False)
     parser.add_argument("-j", "--jobs", type=int, help="number of jobs to pass to make command via -j option", default=1)
+    parser.add_argument("-c", "--clean", action='store_true', help="clean plugin build via 'make clean'", default=False)
 
     return parser.parse_args()
 
@@ -59,19 +60,27 @@ def get_source_dir(plugin_name):
     return os.path.join(os.getcwd(), plugin_name.replace(" ", "_")+".git")
 
 
-def clone_source(plugin_name, git_repo_url, committish=None):
+def clone_source(plugin_name, git_repo_url):
     try:
         subprocess.check_call(["git", "clone", git_repo_url, os.path.basename(get_source_dir(plugin_name))], cwd=os.path.join(os.getcwd()))
-        if committish:
-            subprocess.check_call(["git", "checkout", committish], cwd=get_source_dir(plugin_name))
     except Exception as e:
         print("[%s] ERROR: Failed to clone source" % plugin_name)
         raise e
 
 
-def update_source(plugin_name, git_repo_url):
+def check_out_revision(plugin_name, committish):
     try:
-        subprocess.check_call(["git", "pull", "origin", "master"], cwd=get_source_dir(plugin_name))
+        subprocess.check_call(["git", "checkout", committish], cwd=get_source_dir(plugin_name))
+    except Exception as e:
+        print("[%s] ERROR: Failed to check out revision" % plugin_name)
+        raise e
+
+
+def update_source(plugin_name, git_repo_url, fetch_only=False):
+    try:
+        subprocess.check_call(["git", "fetch", "--all"], cwd=get_source_dir(plugin_name))
+        if not fetch_only:
+            subprocess.check_call(["git", "merge", "origin", "master"], cwd=get_source_dir(plugin_name))
     except Exception as e:
         print("[%s] ERROR: Failed to update source" % plugin_name)
         raise e
@@ -85,6 +94,23 @@ def build_source(plugin_name, num_jobs=1):
         raise e
 
 
+def get_latest_git_tag(plugin_name):
+    try:
+        output = subprocess.check_output(["git", "describe", "--abbrev=0", "--tags"], cwd=get_source_dir(plugin_name))
+        return output.strip().decode("UTF-8")
+    except Exception as e:
+        print("[%s] ERROR: Failed to determine git tag" % plugin_name)
+        return None
+
+
+def clean_build(plugin_name):
+    try:
+        subprocess.check_call(["make", "clean"], cwd=get_source_dir(plugin_name))
+    except Exception as e:
+        print("[%s] ERROR: Failed to clean build" % plugin_name)
+        raise e
+
+
 def main(argv=None):
 
     args = parse_args(argv)
@@ -94,6 +120,7 @@ def main(argv=None):
     plugin_exclude_list = args.exclude
     build_from_source = args.source
     num_jobs = args.jobs
+    do_clean = args.clean
    
     PLATFORM_STRING = {"win": "Windows", "mac": "MacOS", "lin": "Linux"}
 
@@ -262,24 +289,48 @@ def main(argv=None):
                 if build:
                     source_url = pj["source"] if "source" in pj.keys() else None
                     
+                    #
+                    # Source code URL in the plugin file?
+                    #
                     if source_url:
-                        committish = PLUGIN_COMMITTISH_MAP[slug] if slug in PLUGIN_COMMITTISH_MAP.keys() else None
-                        
+                        # Clone the repo if it does not exist.
                         if not os.path.exists(get_source_dir(slug)):
                             print("[%s] Cloning plugin source..." % slug)
-                            clone_source(slug, source_url, committish)
+                            clone_source(slug, source_url)
                         else:
+                            # Fetch updates for local repository.
+                            # Skip updating working copy since we might be on a detached head.
+                            update_source(slug, source_url, fetch_only=True)
+
+                        # Prepare the repository for building. That means either
+                        #  - a hard-coded sha/tag OR
+                        #  - the latest git tag OR
+                        #  - the HEAD of the master branch
+                        committish = PLUGIN_COMMITTISH_MAP[slug] if slug in PLUGIN_COMMITTISH_MAP.keys() else None
+                        if not committish:
+                            committish = get_latest_git_tag(slug)
                             if not committish:
                                 print("[%s] Updating plugin source..." % slug)
+                                check_out_revision(slug, "master")
                                 update_source(slug, source_url)
-                            else:
-                                print("[%s] Repository pinned to version %s. Not updating." % (slug, committish))
+                                committish = "HEAD"
+
+                        if committish:
+                            print("[%s] Checking out revision: %s"  % (slug, committish))
+                            check_out_revision(slug, committish)
                         
+                        if do_clean:
+                            print("[%s] Cleaning build..." % slug)
+                            clean_build(slug)
+
                         print("[%s] Building plugin..." % slug)
                         try:
                             build_source(slug, num_jobs)
                         except Exception as e:
                             error_list.append(slug)
+                    #
+                    # No source code provided. Can't build.
+                    #
                     else:
                         print("[%s] No source URL specified in JSON file. Skipping." % slug)
         

@@ -11,7 +11,8 @@ The script
 - discards any archives that fail `sha256` verification (or encounter any other error) and does **not** extract the archive.
 - only downloads archives that are not already present in the `downloads` directory (verified via `sha256`).
 - only updates the local version of the plugin if a new version was downloaded.
-- can fall back to cloning and building the plugin from source (via command line option). This includes a `git pull` to get the latest version.
+- can fall back to cloning and building the plugin from source (via command line option).
+- will try prefer the latest `git tag` (if there is one), otherwise check out the `HEAD` of the `master` branch to build the plugin.
 
 ## Prerequisites
 
@@ -67,6 +68,14 @@ Valid platforms are: `win`, `mac`, `lin`.
 
 ```
 ./vcv-plugindownloader/vcv-plugindownloader.py win -s -l Fundamental -j 8
+```
+
+Obviously only has an effect when `-s` is specified.
+
+- The *optional* `-c` (or `--clean`) argument specifies whether to clean the build directory before compiling from source (via `make clean`):
+
+```
+./vcv-plugindownloader/vcv-plugindownloader.py win -s -c -l Fundamental
 ```
 
 Obviously only has an effect when `-s` is specified.
