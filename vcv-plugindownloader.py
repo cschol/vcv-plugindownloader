@@ -12,7 +12,7 @@ import subprocess
 import argparse
 import traceback
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 
 COMMUNITY_REPO = "https://github.com/VCVRack/community.git"
@@ -29,7 +29,7 @@ PLUGIN_COMMITTISH_MAP = {
 
 def download_from_url(url, target_path=os.getcwd()):
     file_name = os.path.basename(url).split('?')[0]
-    request = urllib.request.Request(url, headers={'User-Agent': 'vcv-plugindownloader/%s' % __version__}) 
+    request = urllib.request.Request(url, headers={'User-Agent': 'vcv-plugindownloader/%s' % __version__})
     opener = urllib.request.build_opener()
     with opener.open(request) as response, open(os.path.join(target_path, file_name), 'wb') as out_file:
         shutil.copyfileobj(response, out_file)
@@ -52,6 +52,7 @@ def parse_args(argv):
     parser.add_argument("-s", "--source", action='store_true', help="attempt to build plugins from source if binary release is not available", default=False)
     parser.add_argument("-j", "--jobs", type=int, help="number of jobs to pass to make command via -j option", default=1)
     parser.add_argument("-c", "--clean", action='store_true', help="clean plugin build via 'make clean'", default=False)
+    parser.add_argument("-d", "--delete", action='store_true', help="delete plugins from plugins directory. Use with caution!", default=False)
 
     return parser.parse_args()
 
@@ -121,7 +122,8 @@ def main(argv=None):
     build_from_source = args.source
     num_jobs = args.jobs
     do_clean = args.clean
-   
+    delete = args.delete
+
     PLATFORM_STRING = {"win": "Windows", "mac": "MacOS", "lin": "Linux"}
 
     print("VCV Plugin Downloader v%s" % __version__)
@@ -133,10 +135,10 @@ def main(argv=None):
         # 'community' repository contains all of the plugin information.
         print("Updating community repository...")
         if not os.path.exists(COMMUNITY_REPO_DIR):
-            subprocess.check_call(["git", "clone", COMMUNITY_REPO]  )
+            subprocess.check_call(["git", "clone", COMMUNITY_REPO])
         else:
             subprocess.check_call(["git", "pull"], cwd=COMMUNITY_REPO_DIR)
-        
+
         # Build a list of plugins to download.
         plugins_json = []
         # Any plugins specified on command line?
@@ -154,7 +156,7 @@ def main(argv=None):
         # Filter out any excluded plugins (if applicable)
         if plugin_exclude_list:
             plugins_json = [p for p in plugins_json if not any(x for x in plugin_exclude_list if x == os.path.basename(p).strip(".json"))]
-        
+
         if not plugins_json:
             print("ERROR: No valid plugins found")
             return 1
@@ -182,6 +184,34 @@ def main(argv=None):
                 build = build_from_source
 
                 #
+                # Plugin deletion requested?
+                #
+                if delete:
+
+                    # Some modules have directory names that do not match the slug.
+                    module_dir = ""
+                    if "downloads" in pj and platform in pj["downloads"].keys():
+                        file_name = os.path.basename(pj["downloads"][platform]["download"]).split('?')[0]
+                        plugin_zip = os.path.join(DOWNLOAD_DIR, file_name)
+                        try:
+                            module_dir = zipfile.ZipFile(plugin_zip).namelist()[0].strip(os.sep)
+                        except FileNotFoundError:
+                            pass
+
+                    delete_dir = set([module_dir, slug, slug+".git"]) & set(os.listdir(os.getcwd()))
+                    if delete_dir:
+                        delete_dir = list(delete_dir)[0] # convert from set()
+                        print("[%s] Deleting plugin directory '%s'..." % (slug, delete_dir), end='', flush=True)
+                        try:
+                            shutil.rmtree(os.path.join(os.getcwd(), delete_dir))
+                            print("OK")
+                        except Exception as e:
+                            print("ERROR: Failed to remove plugin: %s" % e)
+                    else:
+                        print("[%s] ERROR: Plugin directory not found" % slug)
+                    continue
+
+                #
                 # Binary release available to download?
                 #
                 if "downloads" in pj:
@@ -193,7 +223,7 @@ def main(argv=None):
                         file_name = os.path.basename(url).split('?')[0]
                         sha256 = pj["downloads"][platform]["sha256"] if "sha256" in pj["downloads"][platform].keys() else None
                         download_file = os.path.join(DOWNLOAD_DIR, file_name)
-                            
+
                         #
                         # If downloaded artifact exists already, check if it is the latest version (based on SHA256)
                         #
@@ -202,14 +232,14 @@ def main(argv=None):
                                 print("[%s] ERROR: Missing SHA256 checksum in .json file! Skipping module." % slug)
                                 download = False
 
-                            # If there is a checksum mismatch, there must be a new version 
+                            # If there is a checksum mismatch, there must be a new version
                             # (or the current one is corrupt). Download the archive.
                             if sha256 != hash_sha256(download_file):
                                 os.remove(download_file)
                             else:
                                 print("[%s] Already at newest version. Skipping download." % slug)
                                 download = False
-                        
+
                         #
                         # Do we need to download a (potentially newer) version of the plugin?
                         #
@@ -247,7 +277,7 @@ def main(argv=None):
                         # Update local (extracted) version of the plugin?
                         #
                         module_dir = os.path.join(os.getcwd(), zipfile.ZipFile(download_file).namelist()[0])
-                        
+
                         if os.path.exists(module_dir):
                             # If we downloaded the module, replace the current version with the new one.
                             if download:
@@ -270,7 +300,7 @@ def main(argv=None):
 
                         # Plugin downloaded and extracted successfully. No need to build from source.
                         build = False
-                    
+
                     #
                     # No binary release available for selected platform
                     #
@@ -288,7 +318,7 @@ def main(argv=None):
                 #
                 if build:
                     source_url = pj["source"] if "source" in pj.keys() else None
-                    
+
                     #
                     # Source code URL in the plugin file?
                     #
@@ -332,7 +362,7 @@ def main(argv=None):
                     #
                     else:
                         print("[%s] No source URL specified in JSON file. Skipping." % slug)
-        
+
         # Remove annoying "__MACOSX" directory for all non-Mac platforms, if it exists.
         annoying_mac_dir = os.path.join(os.getcwd(), "__MACOSX")
         if platform != "mac" and os.path.exists(annoying_mac_dir):
@@ -348,7 +378,7 @@ def main(argv=None):
     except Exception as e:
         print("Exception: %s" % e)
         traceback.print_exc(file=sys.stderr)
-        return 1    
+        return 1
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
