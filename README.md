@@ -29,6 +29,15 @@ the **platform-specific** plugin directory for **installed VCV Rack versions**, 
 If you decide to use the `-s` (or `--source`) option to fall back to compiling plugins from source that are not available for your platform
 in binary form, the script **must** be executed from the plugins directory in the *source tree*, e.g. `~/source/Rack/plugins`.
 
+- Change script permissions appropriately per your platform
+
+For example on `Linux`:
+
+```
+cd ~/src/Rack/plugins
+chmod +x vcv-plugindownloader.py
+```
+
 - Execute the script with the appropriate **target platform**
 
 *Windows* example (in `MinGW64` shell, plugins directory in source tree):
