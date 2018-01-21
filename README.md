@@ -46,7 +46,7 @@ cd ~/src/Rack/plugins
 ./vcv-plugindownloader/vcv-plugindownloader.py win
 ```
 
-**NOTE:** The script always assumes the **current working directory** is the `plugins` directory! 
+**NOTE:** The script always assumes the **current working directory** is the `plugins` directory!
 
 ### Arguments
 
@@ -88,6 +88,28 @@ Obviously only has an effect when `-s` is specified.
 ```
 
 Obviously only has an effect when `-s` is specified.
+
+- The *optional* `-d` (or `--delete`) argument allows deleting plugins from the `plugins` folder:
+
+```
+./vcv-plugindownloader/vcv-plugindownloader.py win -d
+./vcv-plugindownloader/vcv-plugindownloader.py win -d -l Fundamental
+```
+
+**USE WITH CAUTION!**
+
+Executing `./vcv-plugindownloader/vcv-plugindownloader.py win -d` will delete **ALL** Windows plugins in your `plugin` directory!
+The script will *confirm* the `delete` action, unless `--yes` is specified on the command line to override the confirmation dialog.
+
+- The *optional* `-y` (or `--yes`) argument answers all questions with 'yes':
+
+```
+./vcv-plugindownloader/vcv-plugindownloader.py win --delete --yes
+```
+
+**USE WITH CAUTION!**
+
+This will override any dialog and answer all questions with **yes**. Useful for automated tasks.
 
 ### Notes
 

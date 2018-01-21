@@ -53,6 +53,7 @@ def parse_args(argv):
     parser.add_argument("-j", "--jobs", type=int, help="number of jobs to pass to make command via -j option", default=1)
     parser.add_argument("-c", "--clean", action='store_true', help="clean plugin build via 'make clean'", default=False)
     parser.add_argument("-d", "--delete", action='store_true', help="delete plugins from plugins directory. Use with caution!", default=False)
+    parser.add_argument("-y", "--yes", action='store_true', help="assume 'yes' as the answer to any question asked by the script", default=False)
 
     return parser.parse_args()
 
@@ -123,6 +124,7 @@ def main(argv=None):
     num_jobs = args.jobs
     do_clean = args.clean
     delete = args.delete
+    assume_yes = args.yes
 
     PLATFORM_STRING = {"win": "Windows", "mac": "MacOS", "lin": "Linux"}
 
@@ -166,6 +168,18 @@ def main(argv=None):
             os.mkdir(DOWNLOAD_DIR)
         if os.path.exists(FAILED_CHECKSUM_DIR):
             shutil.rmtree(FAILED_CHECKSUM_DIR)
+
+        # Confirm deletion (if requested).
+        if delete and not assume_yes:
+            print("Are you sure you want to DELETE the following plugins?\n")
+            print(" ".join(os.path.basename(p).strip(".json") for p in plugins_json))
+            confirm = input("\nPlease confirm [yes|no]: ")
+            if confirm.lower() not in ["yes", "no"]:
+                print("Invalid choice. Aborting.")
+                return 1
+            if confirm.lower() != "yes":
+                print("Delete cancelled.")
+                return 0
 
         #
         # Process all plugins in our assemble list.
