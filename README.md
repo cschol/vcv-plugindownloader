@@ -6,7 +6,7 @@ If a binary release is not available, an option can be provided on the command l
 
 The script
 
-- clones/updates the `community` repository for access to the latest plugin information.
+- downloads/clones/updates the `community` repository for access to the latest plugin information.
 - downloads the archive of **binary releases**, verifies the `sha256`, and extracts the archive.
 - discards any archives that fail `sha256` verification (or encounter any other error) and does **not** extract the archive.
 - only downloads archives that are not already present in the `downloads` directory (verified via `sha256`).
@@ -17,7 +17,7 @@ The script
 ## Prerequisites
 
 - Python 3
-- git
+- git (only *required* for building from source, otherwise *optional*)
 
 ## Usage
 

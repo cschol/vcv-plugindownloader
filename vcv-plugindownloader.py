@@ -12,10 +12,11 @@ import subprocess
 import argparse
 import traceback
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 
 COMMUNITY_REPO = "https://github.com/VCVRack/community.git"
+COMMUNITY_REPO_MASTER_ZIP = "https://github.com/VCVRack/community/archive/master.zip"
 COMMUNITY_REPO_DIR = os.path.join(os.getcwd(), "community")
 DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
 FAILED_CHECKSUM_DIR = os.path.join(DOWNLOAD_DIR, "failed_checksum")
@@ -25,6 +26,15 @@ FAILED_CHECKSUM_DIR = os.path.join(DOWNLOAD_DIR, "failed_checksum")
 PLUGIN_COMMITTISH_MAP = {
     "Fundamental": "v0.5.1"
 }
+
+
+def check_git():
+    try:
+        subprocess.check_output(["git", "--version"])
+        return True
+    except subprocess.CalledProcessError:
+        print("git is not available on this system")
+        return False
 
 
 def download_from_url(url, target_path=os.getcwd()):
@@ -113,6 +123,37 @@ def clean_build(plugin_name):
         raise e
 
 
+def update_community_repo(git_available=False):
+    # 'community' repository contains all of the plugin information.
+    print("Updating community repository...")
+    try:
+        if git_available:
+            # Check if community repository is a git repo. If not, reclone it.
+            if not os.path.exists(os.path.join(COMMUNITY_REPO_DIR, ".git")):
+                    shutil.rmtree(COMMUNITY_REPO_DIR)
+            if not os.path.exists(COMMUNITY_REPO_DIR):
+                subprocess.check_call(["git", "clone", COMMUNITY_REPO])
+            else:
+                subprocess.check_call(["git", "pull"], cwd=COMMUNITY_REPO_DIR)
+        else:
+            if os.path.exists(COMMUNITY_REPO_DIR):
+                shutil.rmtree(COMMUNITY_REPO_DIR)
+            if os.path.exists(os.path.join(DOWNLOAD_DIR, "master.zip")):
+                os.remove(os.path.join(DOWNLOAD_DIR, "master.zip"))
+            download_from_url(COMMUNITY_REPO_MASTER_ZIP, DOWNLOAD_DIR)
+            print("Extracting community repository...", end='', flush=True)
+            try:
+                with zipfile.ZipFile(os.path.join(DOWNLOAD_DIR, "master.zip")) as z:
+                    z.extractall(os.getcwd())
+                shutil.move(os.path.join(os.getcwd(), "community-master"), \
+                    os.path.join(os.getcwd(), "community"))
+                print("OK")
+            except Exception as e:
+                print("ERROR: Failed to extract community repository: %s" % e)
+    except Exception as e:
+        print("ERROR: Failed to update community repository: %s" % e)
+
+
 def main(argv=None):
 
     args = parse_args(argv)
@@ -133,13 +174,15 @@ def main(argv=None):
 
     error_list = []
 
+    git_available = check_git()
+
+    if not git_available and build_from_source:
+        print("ERROR: Building from source requires 'git' to be installed. Aborting.")
+        return 1
+
     try:
-        # 'community' repository contains all of the plugin information.
-        print("Updating community repository...")
-        if not os.path.exists(COMMUNITY_REPO_DIR):
-            subprocess.check_call(["git", "clone", COMMUNITY_REPO])
-        else:
-            subprocess.check_call(["git", "pull"], cwd=COMMUNITY_REPO_DIR)
+        # First, update the community repo containing the plugin information.
+        update_community_repo(git_available)
 
         # Build a list of plugins to download.
         plugins_json = []
