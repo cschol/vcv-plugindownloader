@@ -12,7 +12,7 @@ import subprocess
 import argparse
 import traceback
 
-__version__ = "2.3.0"
+__version__ = "2.3.1"
 
 
 COMMUNITY_REPO = "https://github.com/VCVRack/community.git"
@@ -173,6 +173,7 @@ def main(argv=None):
     print("Platform: %s" % PLATFORM_STRING[platform])
 
     error_list = []
+    warning_list = []
 
     git_available = check_git()
 
@@ -333,7 +334,13 @@ def main(argv=None):
                         #
                         # Update local (extracted) version of the plugin?
                         #
-                        module_dir = os.path.join(os.getcwd(), zipfile.ZipFile(download_file).namelist()[0])
+                        module_dir = os.path.join(os.getcwd(), zipfile.ZipFile(download_file).namelist()[0]).strip(os.sep)
+
+                        # Check if plugin adheres to plugin naming conventions.
+                        # Some modules have directory names that do not match the slug.
+                        if os.path.basename(module_dir) != slug:
+                            print("[%s] WARNING: Plugin root folder does not match slug: %s" % (slug, os.path.basename(module_dir)))
+                            warning_list.append(slug)
 
                         if os.path.exists(module_dir):
                             # If we downloaded the module, replace the current version with the new one.
@@ -427,8 +434,16 @@ def main(argv=None):
 
         if error_list:
             print("")
-            print("PLUGINS WITH ERRORS: %s" % " ".join(error_list))
+            print("PLUGINS WITH ERRORS: %s" % ", ".join(error_list))
+
+        if warning_list:
+            print("")
+            print("PLUGINS WITH WARNINGS: %s" % ", ".join(warning_list))
+
+        if error_list:
             return 1
+        if warning_list:
+            return 2
 
         return 0
 
