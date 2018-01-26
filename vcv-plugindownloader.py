@@ -12,7 +12,7 @@ import subprocess
 import argparse
 import traceback
 
-__version__ = "2.3.1"
+__version__ = "2.3.2"
 
 
 COMMUNITY_REPO = "https://github.com/VCVRack/community.git"
@@ -246,17 +246,17 @@ def main(argv=None):
                 #
                 if delete:
 
-                    # Some modules have directory names that do not match the slug.
-                    module_dir = ""
+                    # Some plugins have directory names that do not match the slug.
+                    plugin_root = ""
                     if "downloads" in pj and platform in pj["downloads"].keys():
                         file_name = os.path.basename(pj["downloads"][platform]["download"]).split('?')[0]
                         plugin_zip = os.path.join(DOWNLOAD_DIR, file_name)
                         try:
-                            module_dir = zipfile.ZipFile(plugin_zip).namelist()[0].strip(os.sep)
+                            plugin_root = zipfile.ZipFile(plugin_zip).namelist()[0].strip(os.sep)
                         except FileNotFoundError:
                             pass
 
-                    delete_dir = set([module_dir, slug, slug+".git"]) & set(os.listdir(os.getcwd()))
+                    delete_dir = set([plugin_root, slug, slug+".git"]) & set(os.listdir(os.getcwd()))
                     if delete_dir:
                         delete_dir = list(delete_dir)[0] # convert from set()
                         print("[%s] Deleting plugin directory '%s'..." % (slug, delete_dir), end='', flush=True)
@@ -334,18 +334,19 @@ def main(argv=None):
                         #
                         # Update local (extracted) version of the plugin?
                         #
-                        module_dir = os.path.join(os.getcwd(), zipfile.ZipFile(download_file).namelist()[0]).strip(os.sep)
+                        plugin_root = zipfile.ZipFile(download_file).namelist()[0].strip(os.sep)
+                        plugin_path = os.path.join(os.getcwd(), plugin_root)
 
                         # Check if plugin adheres to plugin naming conventions.
                         # Some modules have directory names that do not match the slug.
-                        if os.path.basename(module_dir) != slug:
-                            print("[%s] WARNING: Plugin root folder does not match slug: %s" % (slug, os.path.basename(module_dir)))
+                        if plugin_root != slug:
+                            print("[%s] WARNING: Plugin root folder does not match slug: %s" % (slug, plugin_root))
                             warning_list.append(slug)
 
-                        if os.path.exists(module_dir):
+                        if os.path.exists(plugin_path):
                             # If we downloaded the module, replace the current version with the new one.
                             if download:
-                                shutil.rmtree(module_dir)
+                                shutil.rmtree(plugin_path)
                             else:
                                 extract = False
 
@@ -357,8 +358,8 @@ def main(argv=None):
                                 print("OK")
                             except Exception as e:
                                 print("ERROR: Failed to extract module: %s" % e)
-                                if os.path.exists(module_dir):
-                                    shutil.rmtree(module_dir)
+                                if os.path.exists(plugin_path):
+                                    shutil.rmtree(plugin_path)
                                 error_list.append(slug)
                                 continue
 
