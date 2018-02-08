@@ -12,7 +12,7 @@ import subprocess
 import argparse
 import traceback
 
-__version__ = "2.3.2"
+__version__ = "2.3.3"
 
 
 COMMUNITY_REPO = "https://github.com/VCVRack/community.git"
@@ -32,8 +32,8 @@ def check_git():
     try:
         subprocess.check_output(["git", "--version"])
         return True
-    except subprocess.CalledProcessError:
-        print("git is not available on this system")
+    except Exception as e:
+        print("git is not available on this system: %s" % e)
         return False
 
 
