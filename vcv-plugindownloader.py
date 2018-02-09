@@ -12,7 +12,7 @@ import subprocess
 import argparse
 import traceback
 
-__version__ = "2.3.3"
+__version__ = "2.3.4"
 
 
 COMMUNITY_REPO = "https://github.com/VCVRack/community.git"
@@ -129,8 +129,9 @@ def update_community_repo(git_available=False):
     try:
         if git_available:
             # Check if community repository is a git repo. If not, reclone it.
-            if not os.path.exists(os.path.join(COMMUNITY_REPO_DIR, ".git")):
-                    shutil.rmtree(COMMUNITY_REPO_DIR)
+            if not os.path.exists(os.path.join(COMMUNITY_REPO_DIR, ".git")) and \
+                os.path.exists(COMMUNITY_REPO_DIR):
+                shutil.rmtree(COMMUNITY_REPO_DIR)
             if not os.path.exists(COMMUNITY_REPO_DIR):
                 subprocess.check_call(["git", "clone", COMMUNITY_REPO])
             else:
@@ -152,6 +153,7 @@ def update_community_repo(git_available=False):
                 print("ERROR: Failed to extract community repository: %s" % e)
     except Exception as e:
         print("ERROR: Failed to update community repository: %s" % e)
+        raise
 
 
 def main(argv=None):
@@ -334,7 +336,7 @@ def main(argv=None):
                         #
                         # Update local (extracted) version of the plugin?
                         #
-                        plugin_root = zipfile.ZipFile(download_file).namelist()[0].strip(os.sep)
+                        plugin_root = zipfile.ZipFile(download_file).namelist()[0].strip("/\\")
                         plugin_path = os.path.join(os.getcwd(), plugin_root)
 
                         # Check if plugin adheres to plugin naming conventions.
