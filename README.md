@@ -6,7 +6,7 @@ If a binary release is not available, an option can be provided on the command l
 
 The script
 
-- downloads/clones/updates the `community` repository for access to the latest plugin information.
+- gets the latest plugin information from the *Rack Web API*, which is synced to the community repository on GitHub.
 - downloads the archive of **binary releases**, verifies the `sha256`, and extracts the archive.
 - discards any archives that fail `sha256` verification (or encounter any other error) and does **not** extract the archive.
 - only downloads archives that are not already present in the `downloads` directory (verified via `sha256`).
@@ -17,7 +17,7 @@ The script
 ## Prerequisites
 
 - Python 3
-- git (only *required* for building from source, otherwise *optional*)
+- git (only *required for building from source*, otherwise *optional*)
 
 ## Usage
 
@@ -52,10 +52,16 @@ vcv-plugindownloader.py win
 
 Valid platforms are: `win`, `mac`, `lin`.
 
-- The *optional* `-l` (or `--list`) argument allows specifying individual plugins to download in a *whitespace-separated* list:
+- The *optional* `-l` (or `--list`) argument prints out the names of all available plugins in the community repository:
 
 ```
-vcv-plugindownloader.py win -l AudibleInstruments Grayscale
+vcv-plugindownloader.py win --list
+```
+
+- The *optional* `-i` (or `--include`) argument allows specifying individual plugins to include in the download in a *whitespace-separated* list:
+
+```
+vcv-plugindownloader.py win -i AudibleInstruments Grayscale
 ```
 
 - The *optional* `-x` (or `--exclude`) argument allows specifying individual plugins to exclude from download in a *whitespace-separated* list:
