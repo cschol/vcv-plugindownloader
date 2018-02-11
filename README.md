@@ -16,8 +16,17 @@ The script
 
 ## Prerequisites
 
+- Command line access (i.e. a shell)
+
+**NOTE for Windows users**: Using the Windows `cmd.exe` will work for downloading binaries, but most likely fail for building plugins from source.
+An [msys2](http://www.msys2.org/) development environment with the appropriate Unix-like shell is recommended for building plugins
+from source using the `-s` (or `--source`) option of this script.
+
 - Python 3
-- git (only *required for building from source*, otherwise *optional*)
+
+Optional:
+
+- git (only required for building plugins from source)
 
 ## Usage
 
