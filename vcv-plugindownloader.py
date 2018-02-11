@@ -75,7 +75,7 @@ def clone_source(plugin_name, git_repo_url):
     try:
         subprocess.check_call(["git", "clone", git_repo_url, os.path.basename(get_source_dir(plugin_name))], cwd=os.path.join(os.getcwd()))
     except Exception as e:
-        print("[%s] ERROR: Failed to clone source" % plugin_name)
+        print("[%s] ERROR: Failed to clone source: %s" % (plugin_name, e))
         raise e
 
 
@@ -83,7 +83,7 @@ def check_out_revision(plugin_name, committish):
     try:
         subprocess.check_call(["git", "checkout", committish], cwd=get_source_dir(plugin_name))
     except Exception as e:
-        print("[%s] ERROR: Failed to check out revision" % plugin_name)
+        print("[%s] ERROR: Failed to check out revision: %s" % (plugin_name, e))
         raise e
 
 
@@ -93,7 +93,7 @@ def update_source(plugin_name, git_repo_url, fetch_only=False):
         if not fetch_only:
             subprocess.check_call(["git", "merge", "origin/master"], cwd=get_source_dir(plugin_name))
     except Exception as e:
-        print("[%s] ERROR: Failed to update source" % plugin_name)
+        print("[%s] ERROR: Failed to update source: %s" % (plugin_name, e))
         raise e
 
 
@@ -101,7 +101,7 @@ def build_source(plugin_name, num_jobs=1):
     try:
         subprocess.check_call(["make", "-j%s" % num_jobs], cwd=get_source_dir(plugin_name))
     except Exception as e:
-        print("[%s] ERROR: Failed to build from source" % plugin_name)
+        print("[%s] ERROR: Failed to build from source: %s" % (plugin_name, e))
         raise e
 
 
@@ -118,7 +118,7 @@ def clean_build(plugin_name):
     try:
         subprocess.check_call(["make", "clean"], cwd=get_source_dir(plugin_name))
     except Exception as e:
-        print("[%s] ERROR: Failed to clean build" % plugin_name)
+        print("[%s] ERROR: Failed to clean build: %s" % (plugin_name, e))
         raise e
 
 
@@ -373,39 +373,39 @@ def main(argv=None):
                 # Source code URL in the plugin file?
                 #
                 if source_url:
-                    # Clone the repo if it does not exist.
-                    if not os.path.exists(get_source_dir(slug)):
-                        print("[%s] Cloning plugin source..." % slug)
-                        clone_source(slug, source_url)
-                    else:
-                        # Fetch updates for local repository.
-                        # Skip updating working copy since we might be on a detached head.
-                        update_source(slug, source_url, fetch_only=True)
-
-                    # Prepare the repository for building. That means either
-                    #  - a hard-coded sha/tag OR
-                    #  - the latest git tag OR
-                    #  - the HEAD of the master branch
-                    committish = PLUGIN_COMMITTISH_MAP[slug] if slug in PLUGIN_COMMITTISH_MAP.keys() else None
-                    if not committish:
-                        committish = get_latest_git_tag(slug)
-                        if not committish:
-                            print("[%s] Updating plugin source..." % slug)
-                            check_out_revision(slug, "master")
-                            update_source(slug, source_url)
-                            committish = "HEAD"
-
-                    print("[%s] Checking out revision: %s"  % (slug, committish))
-                    check_out_revision(slug, committish)
-
-                    if do_clean:
-                        print("[%s] Cleaning build..." % slug)
-                        clean_build(slug)
-
-                    print("[%s] Building plugin..." % slug)
                     try:
+                        # Clone the repo if it does not exist.
+                        if not os.path.exists(get_source_dir(slug)):
+                            print("[%s] Cloning plugin source..." % slug)
+                            clone_source(slug, source_url)
+                        else:
+                            # Fetch updates for local repository.
+                            # Skip updating working copy since we might be on a detached head.
+                            update_source(slug, source_url, fetch_only=True)
+
+                        # Prepare the repository for building. That means either
+                        #  - a hard-coded sha/tag OR
+                        #  - the latest git tag OR
+                        #  - the HEAD of the master branch
+                        committish = PLUGIN_COMMITTISH_MAP[slug] if slug in PLUGIN_COMMITTISH_MAP.keys() else None
+                        if not committish:
+                            committish = get_latest_git_tag(slug)
+                            if not committish:
+                                print("[%s] Updating plugin source..." % slug)
+                                check_out_revision(slug, "master")
+                                update_source(slug, source_url)
+                                committish = "HEAD"
+
+                        print("[%s] Checking out revision: %s"  % (slug, committish))
+                        check_out_revision(slug, committish)
+
+                        if do_clean:
+                            print("[%s] Cleaning build..." % slug)
+                            clean_build(slug)
+
+                        print("[%s] Building plugin..." % slug)
                         build_source(slug, num_jobs)
-                    except Exception as e:
+                    except Exception:
                         error_list.append(slug)
                 #
                 # No source code provided. Can't build.
