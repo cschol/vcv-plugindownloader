@@ -13,7 +13,7 @@ import argparse
 import traceback
 import getpass
 
-__version__ = "2.3.4"
+__version__ = "2.4.0"
 
 DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
 FAILED_CHECKSUM_DIR = os.path.join(DOWNLOAD_DIR, "failed_checksum")
@@ -405,6 +405,7 @@ def main(argv=None):
 
                         print("[%s] Building plugin..." % slug)
                         build_source(slug, num_jobs)
+
                     except Exception:
                         error_list.append(slug)
                 #
