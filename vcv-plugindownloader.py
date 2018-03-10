@@ -65,6 +65,7 @@ def parse_args(argv):
     parser.add_argument("-y", "--yes", action='store_true', help="assume 'yes' as the answer to any question asked by the script", default=False)
     parser.add_argument("-l", "--list", action='store_true', help="list all available plugins", default=False)
     parser.add_argument("-p", "--patch", type=str, help="name of patch file to download plugins for")
+    parser.add_argument("--prefer-source", action='store_true', help="prefer building plugin source over downloading binaries even if binaries are available", default=False)
 
     return parser.parse_args()
 
@@ -164,6 +165,7 @@ def main(argv=None):
     plugin_include_list = args.include
     plugin_exclude_list = args.exclude
     build_from_source = args.source
+    prefer_source = args.prefer_source
     num_jobs = args.jobs
     do_clean = args.clean
     delete = args.delete
@@ -185,9 +187,10 @@ def main(argv=None):
         print("ERROR: Building from source requires 'git' to be installed. Aborting.")
         return 1
 
-    if patch_file and not os.path.exists(patch_file) or not patch_file.endswith(".vcv"):
-        print("ERROR: Invalid patch file: '%s'. Aborting." % patch_file)
-        return 1
+    if patch_file:
+        if not os.path.exists(patch_file) or not patch_file.endswith(".vcv"):
+            print("ERROR: Invalid patch file: '%s'. Aborting." % patch_file)
+            return 1
 
     community_plugins = get_community_plugins()["plugins"]
     available_plugins = sorted([p["slug"] for p in community_plugins])
@@ -304,9 +307,14 @@ def main(argv=None):
                 continue
 
             #
+            # Skip binary download if building source is preferred.
+            #
+            if prefer_source:
+                pass
+            #
             # Binary release available to download?
             #
-            if "downloads" in plugin:
+            elif "downloads" in plugin:
                 #
                 # Binary release available for the selected platform?
                 #
