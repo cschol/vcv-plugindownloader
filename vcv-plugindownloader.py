@@ -13,7 +13,7 @@ import argparse
 import traceback
 import getpass
 
-__version__ = "2.4.0"
+__version__ = "2.5.0"
 
 DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
 FAILED_CHECKSUM_DIR = os.path.join(DOWNLOAD_DIR, "failed_checksum")
@@ -22,7 +22,8 @@ RACK_API_HOST = "https://api.vcvrack.com"
 
 # Certain plugins require special branches, tags, or shas to be checked out to build successfully.
 PLUGIN_COMMITTISH_MAP = {
-    "Fundamental": "v0.5.1"
+    "Fundamental": "v0.5.1",
+    "mscHack": "master"
 }
 
 def check_git():
@@ -73,9 +74,16 @@ def get_source_dir(plugin_name):
 
 def clone_source(plugin_name, git_repo_url):
     try:
-        subprocess.check_call(["git", "clone", git_repo_url, os.path.basename(get_source_dir(plugin_name))], cwd=os.path.join(os.getcwd()))
+        subprocess.check_call(["git", "clone", git_repo_url, os.path.basename(get_source_dir(plugin_name))], cwd=os.getcwd())
     except Exception as e:
         print("[%s] ERROR: Failed to clone source: %s" % (plugin_name, e))
+        raise e
+
+def update_submodules(plugin_name):
+    try:
+        subprocess.check_call(["git", "submodule", "update", "--init", "--recursive"], cwd=get_source_dir(plugin_name))
+    except Exception as e:
+        print("[%s] ERROR: Failed to update submodule: %s" % (plugin_name, e))
         raise e
 
 
@@ -97,7 +105,7 @@ def update_source(plugin_name, git_repo_url, fetch_only=False):
         raise e
 
 
-def build_source(plugin_name, num_jobs=1):
+def build_source(plugin_name, num_jobs=4):
     try:
         subprocess.check_call(["make", "-j%s" % num_jobs], cwd=get_source_dir(plugin_name))
     except Exception as e:
@@ -255,7 +263,7 @@ def main(argv=None):
             #
             # Binary release available to download?
             #
-            if "downloads" in plugin:
+            if not "downloads" in plugin:
                 #
                 # Binary release available for the selected platform?
                 #
@@ -382,6 +390,11 @@ def main(argv=None):
                             # Fetch updates for local repository.
                             # Skip updating working copy since we might be on a detached head.
                             update_source(slug, source_url, fetch_only=True)
+
+                        # Update git submodules (if applicable)
+                        if os.path.exists(os.path.join(get_source_dir(slug), ".gitmodules")):
+                            print("[%s] Updating submodules..." % slug)
+                            update_submodules(slug)
 
                         # Prepare the repository for building. That means either
                         #  - a hard-coded sha/tag OR
