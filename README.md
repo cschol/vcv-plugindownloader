@@ -133,4 +133,4 @@ pinned like that will not be updated automatically.
 
 ## Supported platforms
 
-The script has been tested on the Windows platform, but **should** work on MacOS and Linux.
+The script has been tested on the Windows and Linux platform, but **should** work on MacOS also.
