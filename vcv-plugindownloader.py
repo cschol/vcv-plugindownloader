@@ -263,7 +263,7 @@ def main(argv=None):
             #
             # Binary release available to download?
             #
-            if not "downloads" in plugin:
+            if "downloads" in plugin:
                 #
                 # Binary release available for the selected platform?
                 #
