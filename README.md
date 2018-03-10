@@ -13,6 +13,7 @@ The script
 - only updates the local version of the plugin if a new version was downloaded.
 - can fall back to cloning and building the plugin from source (via command line option).
 - will try prefer the latest `git tag` (if there is one), otherwise check out the `HEAD` of the `master` branch to build the plugin.
+- allows specifying a Rack patch (`.vcv`) file and download all publicly available plugins contained in the patch file
 
 ## Prerequisites
 
@@ -123,6 +124,14 @@ vcv-plugindownloader.py win --delete --yes
 **USE WITH CAUTION!**
 
 This will override any dialog and answer all questions with **yes**. Useful for automated tasks.
+
+- The *optional* `-p` (or `--patch`) argument specifies a Rack patch file (`.vcv`), which allows downloading all available plugins in the patch file:
+
+```
+vcv-plugindownloader.py win -p MyPatch.vcv
+vcv-plugindownloader.py win -p MyPatch.vcv -x Befaco
+vcv-plugindownloader.py win -p MyPatch.vcv -x Befaco -s
+```
 
 ### Notes
 

@@ -13,7 +13,7 @@ import argparse
 import traceback
 import getpass
 
-__version__ = "2.5.0"
+__version__ = "2.6.0"
 
 DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
 FAILED_CHECKSUM_DIR = os.path.join(DOWNLOAD_DIR, "failed_checksum")
@@ -64,6 +64,7 @@ def parse_args(argv):
     parser.add_argument("-d", "--delete", action='store_true', help="delete plugins from plugins directory. Use with caution!", default=False)
     parser.add_argument("-y", "--yes", action='store_true', help="assume 'yes' as the answer to any question asked by the script", default=False)
     parser.add_argument("-l", "--list", action='store_true', help="list all available plugins", default=False)
+    parser.add_argument("-p", "--patch", type=str, help="name of patch file to download plugins for")
 
     return parser.parse_args()
 
@@ -140,6 +141,20 @@ def get_community_plugins():
     return json.loads(api_request(RACK_API_HOST+"/community/plugins", None))
 
 
+def get_plugins_from_patch_file(patch_file):
+    plugins = set()
+    with open(patch_file, 'r') as pf:
+        try:
+            patch_json = json.loads(pf.read())
+            plugins = set([x["plugin"] for x in patch_json["modules"]])
+        except KeyError:
+            print("ERROR: No plugins found in patch file '%s" % patch_file)
+            # Empty patch
+        except json.decoder.JSONDecodeError as e:
+            print("ERROR: Invalid patch file '%s': %s" % (patch_file, e))
+    return sorted(plugins)
+
+
 def main(argv=None):
 
     # Argument handling
@@ -154,6 +169,7 @@ def main(argv=None):
     delete = args.delete
     assume_yes = args.yes
     list_plugins = args.list
+    patch_file = args.patch
 
     print("VCV Plugin Downloader v%s" % __version__)
     print("Platform: %s" % PLATFORM_STRING[platform])
@@ -169,6 +185,10 @@ def main(argv=None):
         print("ERROR: Building from source requires 'git' to be installed. Aborting.")
         return 1
 
+    if patch_file and not os.path.exists(patch_file) or not patch_file.endswith(".vcv"):
+        print("ERROR: Invalid patch file: '%s'. Aborting." % patch_file)
+        return 1
+
     community_plugins = get_community_plugins()["plugins"]
     available_plugins = sorted([p["slug"] for p in community_plugins])
 
@@ -181,13 +201,36 @@ def main(argv=None):
 
         # Build a list of plugins to download.
         plugins = []
+
+        # If patch file is specified on command line, get the list of plugins from the patch.
+        if patch_file:
+            patch_plugins = get_plugins_from_patch_file(patch_file)
+
+            # Filter out certain Rack stock plugins, that we don't want to download.
+            patch_plugins = [p for p in patch_plugins if not p in ["Core", "Fundamental"]]
+
+            if not patch_plugins:
+                print("No plugins to download for patch file '%s'" % patch_file)
+                return 0
+
+            print("Modules found in patch file '%s':" % patch_file)
+            print(", ".join(patch_plugins))
+            print("")
+
+            for pp in patch_plugins:
+                if pp not in available_plugins:
+                    print("[%s] ERROR: Plugin not found in Community repository. Skipping." % pp)
+                plugins.append([p for p in community_plugins if p["slug"] == pp][0])
+
         # Any plugins specified on command line?
-        if plugin_include_list:
+        elif plugin_include_list:
             for pi in plugin_include_list:
                 if pi not in available_plugins:
                     print("[%s] ERROR: Invalid plugin name" % pi)
                     return 1
                 plugins.append([p for p in community_plugins if p["slug"] == pi][0])
+
+        # Assume to download ALL plugins from community repository.
         else:
             plugins = community_plugins
 
@@ -418,6 +461,8 @@ def main(argv=None):
 
                         print("[%s] Building plugin..." % slug)
                         build_source(slug, num_jobs)
+
+                        update_list.append(slug)
 
                     except Exception:
                         error_list.append(slug)
