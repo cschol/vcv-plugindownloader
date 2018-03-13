@@ -14,6 +14,7 @@ The script
 - can fall back to cloning and building the plugin from source (via command line option).
 - will try prefer the latest `git tag` (if there is one), otherwise check out the `HEAD` of the `master` branch to build the plugin.
 - allows specifying a Rack patch (`.vcv`) file and download all publicly available plugins contained in the patch file
+- allows updating all existing plugins in the `plugins` folder without installing any new plugins.
 
 ## Prerequisites
 
@@ -84,13 +85,13 @@ vcv-plugindownloader.py win -x AudibleInstruments Grayscale
 
 ```
 vcv-plugindownloader.py win -s
-vcv-plugindownloader.py win -s -l Fundamental
+vcv-plugindownloader.py win -s -i Fundamental
 ```
 
 - The *optional* `-j` (or `--jobs`) argument specifies number of jobs to pass to `make` with the `-j` argument:
 
 ```
-vcv-plugindownloader.py win -s -l Fundamental -j 8
+vcv-plugindownloader.py win -s -i Fundamental -j 8
 ```
 
 Obviously only has an effect when `-s` is specified.
@@ -98,7 +99,7 @@ Obviously only has an effect when `-s` is specified.
 - The *optional* `-c` (or `--clean`) argument specifies whether to clean the build directory before compiling from source (via `make clean`):
 
 ```
-vcv-plugindownloader.py win -s -c -l Fundamental
+vcv-plugindownloader.py win -s -c -i Fundamental
 ```
 
 Obviously only has an effect when `-s` is specified.
@@ -107,7 +108,7 @@ Obviously only has an effect when `-s` is specified.
 
 ```
 vcv-plugindownloader.py win -d
-vcv-plugindownloader.py win -d -l Fundamental
+vcv-plugindownloader.py win -d -i Fundamental
 ```
 
 **USE WITH CAUTION!**
@@ -131,6 +132,14 @@ This will override any dialog and answer all questions with **yes**. Useful for 
 vcv-plugindownloader.py win -p MyPatch.vcv
 vcv-plugindownloader.py win -p MyPatch.vcv -x Befaco
 vcv-plugindownloader.py win -p MyPatch.vcv -x Befaco -s
+```
+
+- The *optional* `-u` (or `--update`) argument allows updating all *existing* plugins in the `plugin` directory:
+
+```
+vcv-plugindownloader.py win -u
+vcv-plugindownloader.py win -u -s
+vcv-plugindownloader.py win -u -x Fundamental
 ```
 
 ### Notes

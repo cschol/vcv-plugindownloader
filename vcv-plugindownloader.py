@@ -13,7 +13,7 @@ import argparse
 import traceback
 import getpass
 
-__version__ = "2.6.0"
+__version__ = "2.7.0"
 
 DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
 FAILED_CHECKSUM_DIR = os.path.join(DOWNLOAD_DIR, "failed_checksum")
@@ -66,6 +66,7 @@ def parse_args(argv):
     parser.add_argument("-l", "--list", action='store_true', help="list all available plugins", default=False)
     parser.add_argument("-p", "--patch", type=str, help="name of patch file to download plugins for")
     parser.add_argument("--prefer-source", action='store_true', help="prefer building plugin source over downloading binaries even if binaries are available", default=False)
+    parser.add_argument("-u", "--update", action='store_true', help="update all existing plugins found in the plugins directory", default=False)
 
     return parser.parse_args()
 
@@ -172,6 +173,7 @@ def main(argv=None):
     assume_yes = args.yes
     list_plugins = args.list
     patch_file = args.patch
+    do_update = args.update
 
     print("VCV Plugin Downloader v%s" % __version__)
     print("Platform: %s" % PLATFORM_STRING[platform])
@@ -205,8 +207,14 @@ def main(argv=None):
         # Build a list of plugins to download.
         plugins = []
 
+        # If update is specified on command line, get list of plugins in plugins directory.
+        if do_update:
+            p_list = sorted([p.split(".")[0] for p in os.listdir(os.getcwd()) if p.split(".")[0] in available_plugins])
+            for pl in p_list:
+                plugins.append([p for p in community_plugins if p["slug"] == pl][0])
+
         # If patch file is specified on command line, get the list of plugins from the patch.
-        if patch_file:
+        elif patch_file:
             patch_plugins = get_plugins_from_patch_file(patch_file)
 
             # Filter out certain Rack stock plugins, that we don't want to download.
